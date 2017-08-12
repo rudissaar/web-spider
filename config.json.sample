@@ -1,0 +1,8 @@
+{
+    "targets": [
+        {
+            "url": "https://google.com",
+            "check_for_img_alt_attributes": 0
+        }
+    ]
+}
