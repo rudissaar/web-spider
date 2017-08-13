@@ -3,4 +3,4 @@
 from web_spider import WebSpider
 
 spider = WebSpider()
-spider.run();
+spider.run()

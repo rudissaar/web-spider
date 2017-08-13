@@ -12,6 +12,7 @@ class WebSpider:
     settings = dict()
 
     settings['config_file'] = 'config.json'
+    settings['headers'] = dict()
 
     def __init__(self):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -21,15 +22,7 @@ class WebSpider:
         if os.path.isfile(self.settings['config_file']):
             with open(self.settings['config_file']) as data_file:
                 data = json.load(data_file)
-                self.settings['targets'] = data['targets']
-
-    @property
-    def target(self):
-        return self.settings['target']
-
-    @target.setter
-    def target(self, value):
-        self.settings['target'] = value
+                self.settings = data
 
     @staticmethod
     def validateUrl(value):
@@ -40,14 +33,16 @@ class WebSpider:
         except ValidationError:
             return False
 
-    def validate(self):
-        if not self.validateUrl(self.target):
-            return False
+    @property
+    def user_agent(self):
+        return self.settings['headers']['user-agent']
 
-        return True
+    @user_agent.setter
+    def user_agent(self, value):
+        self.settings['headers']['user-agent'] = value
 
     def run(self):
-        http = urllib3.PoolManager()
+        http = urllib3.PoolManager(headers=self.settings['headers'])
 
         for target in self.settings['targets']:
             print(target['url'])
