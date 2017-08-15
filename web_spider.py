@@ -25,7 +25,7 @@ class WebSpider:
                 self.settings = data
 
     @staticmethod
-    def validateUrl(value):
+    def validate_url(value):
         validator = URLValidator()
         try:
             validator(value)
@@ -51,5 +51,12 @@ class WebSpider:
             soup = BeautifulSoup(data, 'html.parser')
 
             for line in soup.find_all('a'):
-                line = line.get('href')
-                print(line)
+                url = line.get('href')
+
+                if not url:
+                    continue
+
+                if url[:4] != 'http':
+                    url = target['url'] + '/' + url
+
+                print(url)
