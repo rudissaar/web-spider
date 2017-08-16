@@ -33,6 +33,15 @@ class WebSpider:
         except ValidationError:
             return False
 
+    @staticmethod
+    def combine_uri(part_one, part_two):
+        if not part_one.endswith('/'):
+            part_one += '/'
+        if part_two.startswith('/'):
+            part_two = part_two[1:]
+
+        return part_one + part_two
+
     @property
     def user_agent(self):
         return self.settings['headers']['user-agent']
@@ -57,6 +66,6 @@ class WebSpider:
                     continue
 
                 if url[:4] != 'http':
-                    url = target['url'] + '/' + url
+                    url = self.combine_uri(target['url'], url)
 
                 print(url)
