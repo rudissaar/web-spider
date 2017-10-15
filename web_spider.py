@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import json
 import os
 import urllib3
-import json
+from bs4 import BeautifulSoup
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
-from bs4 import BeautifulSoup
-
+from urllib.parse import urlparse
 
 class WebSpider:
     settings = dict()
@@ -23,6 +23,10 @@ class WebSpider:
             with open(self.settings['config_file']) as data_file:
                 data = json.load(data_file)
                 self.settings = data
+        else:
+            print("> Can't find config file (" + self.settings['config_file'] + ").")
+            print("> You can create a new config file by copying 'config.json.sample' file and renaming it.")
+            exit(1)
 
     @staticmethod
     def validate_url(value):
@@ -54,8 +58,9 @@ class WebSpider:
         http = urllib3.PoolManager(headers=self.settings['headers'])
 
         for target in self.settings['targets']:
-            print(target['url'])
             request = http.request('GET', target['url'])
+            protocol = urlparse(target['url'])[0]
+
             data = request.data;
             soup = BeautifulSoup(data, 'html.parser')
 
@@ -65,7 +70,9 @@ class WebSpider:
                 if not url:
                     continue
 
-                if url[:4] != 'http':
+                if url[:4] != 'http' and url[:2] != '//':
                     url = self.combine_uri(target['url'], url)
+                elif url[:2] == '//':
+                    url = protocol + ':' + url
 
                 print(url)
