@@ -2,8 +2,7 @@
     "targets": [
         {
             "url": "https://google.com",
-            "check_for_img_alt_attributes": 0,
-            "max_depth": 5
+            "check_for_img_alt_attributes": 0
         }
     ],
     "headers": {
