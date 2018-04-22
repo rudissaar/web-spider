@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+"""Script that executes WebSpider."""
+
 from web_spider import WebSpider
 
-spider = WebSpider()
-spider.run()
+SPIDER = WebSpider()
+SPIDER.run()
