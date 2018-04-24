@@ -2,10 +2,14 @@
     "targets": [
         {
             "url": "https://google.com",
-            "fetch_urls": 1
+            "fetch_urls": 1,
+            "fetch_emails": 1
         }
     ],
     "headers": {
         "user-agent": "Web Spider/0.1.0 (github.com/rudissaar/web-spider)"
-    }
+    },
+    "escaped_email_symbols": [
+        "[at]"
+    ]
 }

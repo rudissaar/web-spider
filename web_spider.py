@@ -7,6 +7,7 @@ import calendar
 import json
 import os
 import time
+import re
 from urllib.parse import urlparse, urlsplit
 import urllib3
 from bs4 import BeautifulSoup
@@ -73,6 +74,13 @@ class WebSpider:
         """Assings new value to user_agent property."""
         self.settings['headers']['user-agent'] = value
 
+    def get_page_source(self, target):
+        """Makes request to target and returns result."""
+        http = urllib3.PoolManager(headers=self.settings['headers'])
+        request = http.request('GET', target['url'])
+        page_source = request.data
+        return page_source
+
     def save_loot(self):
         """Saves fetched results on drive."""
         for target in self.loot:
@@ -86,12 +94,20 @@ class WebSpider:
                 os.mkdir(path, 0o700)
 
             try:
-                with open(path + '/urls.txt', 'w+') as file_handle:
-                    for url in self.loot[target]['urls']:
-                        file_handle.write(url + "\n")
+                if self.loot[target]['urls']:
+                    with open(path + '/urls.txt', 'w+') as file_handle:
+                        for url in self.loot[target]['urls']:
+                            file_handle.write(url + "\n")
             except KeyError:
-                if os.path.isfile(path + '/urls.txt'):
-                    os.remove(path + '/urls.txt')
+                pass
+
+            try:
+                if self.loot[target]['emails']:
+                    with open(path + '/emails.txt', 'w+') as file_handle:
+                        for email in self.loot[target]['emails']:
+                            file_handle.write(email + "\n")
+            except KeyError:
+                pass
 
     def run(self):
         """Method that executes WebSpider."""
@@ -102,15 +118,15 @@ class WebSpider:
             if target['fetch_urls']:
                 self.fetch_urls(target, self.loot[netloc])
 
+            if target['fetch_emails']:
+                self.fetch_emails(target, self.loot[netloc])
+
         self.save_loot()
 
     def fetch_urls(self, target, loot):
         """Method that fetches URLs."""
-        http = urllib3.PoolManager(headers=self.settings['headers'])
-        request = http.request('GET', target['url'])
         protocol = urlparse(target['url'])[0]
-
-        data = request.data
+        data = self.get_page_source(target)
         soup = BeautifulSoup(data, 'html.parser')
 
         loot['urls'] = list()
@@ -128,3 +144,26 @@ class WebSpider:
 
             if url not in loot['urls']:
                 loot['urls'].append(url)
+
+    def fetch_emails(self, target, loot):
+        """Method that fetches Emails."""
+        data = self.get_page_source(target)
+        regex = re.compile(r'[\w\.-]+@[\w\.-]+')
+        emails = re.findall(regex, data.decode('utf8'))
+
+        loot['emails'] = list()
+
+        for email in emails:
+            if not email in loot['emails']:
+                loot['emails'].append(email)
+
+        if self.settings['escaped_email_symbols']:
+            for escaped_symbol in self.settings['escaped_email_symbols']:
+                regex = re.compile(r'[\w\.-]+' + re.escape(escaped_symbol) + r'[\w\.-]+')
+                emails = re.findall(regex, data.decode('utf8'))
+
+                for escaped_email in emails:
+                    email = escaped_email.replace(escaped_symbol, '@')
+
+                    if not email in loot['emails']:
+                        loot['emails'].append(email)
