@@ -115,11 +115,17 @@ class WebSpider:
             netloc = urlsplit(target['url']).netloc
             self.loot[netloc] = dict()
 
-            if target['fetch_urls']:
-                self.fetch_urls(target, self.loot[netloc])
+            try:
+                if target['fetch_urls']:
+                    self.fetch_urls(target, self.loot[netloc])
+            except KeyError:
+                pass
 
-            if target['fetch_emails']:
-                self.fetch_emails(target, self.loot[netloc])
+            try:
+                if target['fetch_emails']:
+                    self.fetch_emails(target, self.loot[netloc])
+            except KeyError:
+                pass
 
         self.save_loot()
 
