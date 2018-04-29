@@ -19,6 +19,11 @@ class WebSpider:
     settings = dict()
     settings['config_file'] = 'config.json'
     settings['headers'] = dict()
+
+    media_types = ['.jpg', '.png', '.gif', '.pdf']
+
+    pile = list()
+    trash = list()
     loot = dict()
 
     def __init__(self):
@@ -77,7 +82,13 @@ class WebSpider:
     def get_page_source(self, target):
         """Makes request to target and returns result."""
         http = urllib3.PoolManager(headers=self.settings['headers'])
-        request = http.request('GET', target['url'])
+
+        try:
+            request = http.request('GET', target['url'])
+        except UnicodeEncodeError:
+            print('> Failed to encode URL: ' + target['url'])
+            return b''
+
         page_source = request.data
         return page_source
 
@@ -107,25 +118,37 @@ class WebSpider:
         """Method that executes WebSpider."""
         for target in self.settings['targets']:
             netloc = urlsplit(target['url']).netloc
+            print('> Spidering domain: ' + netloc)
+
             self.loot[netloc] = dict()
+            self.pile = [target['url']]
+            self.trash.clear()
 
-            try:
-                if target['fetch_urls']:
-                    self.fetch_urls(target, self.loot[netloc])
-            except KeyError:
-                pass
+            while bool(self.pile):
+                for url in self.pile:
+                    print(url)
+                    target['url'] = url
 
-            try:
-                if target['fetch_emails']:
-                    self.fetch_emails(target, self.loot[netloc])
-            except KeyError:
-                pass
+                    try:
+                        if target['fetch_urls']:
+                            self.fetch_urls(target, self.loot[netloc])
+                    except KeyError:
+                        pass
 
-            try:
-                if target['fetch_comments']:
-                    self.fetch_comments(target, self.loot[netloc])
-            except KeyError:
-                pass
+                    try:
+                        if target['fetch_emails']:
+                            self.fetch_emails(target, self.loot[netloc])
+                    except KeyError:
+                        pass
+
+                    try:
+                        if target['fetch_comments']:
+                            self.fetch_comments(target, self.loot[netloc])
+                    except KeyError:
+                        pass
+
+                    self.pile.remove(url)
+                    self.trash.append(url)
 
         self.save_loot()
 
@@ -134,6 +157,7 @@ class WebSpider:
         protocol = urlparse(target['url'])[0]
         data = self.get_page_source(target)
         soup = BeautifulSoup(data, 'html.parser')
+        media = False
 
         loot['urls'] = list()
 
@@ -148,12 +172,31 @@ class WebSpider:
             elif url[:2] == '//':
                 url = protocol + ':' + url
 
-            if url not in loot['urls']:
+            if str(os.path.splitext(urlsplit(url).path)[1]).lower() in self.media_types:
+                media = True
+
+            if not media and url not in loot['urls']:
                 loot['urls'].append(url)
+
+            same_domain = urlsplit(url).netloc == urlsplit(target['url']).netloc
+            same_path = urlsplit(url).path == urlsplit(target['url']).path
+
+            # Logic that decides if we are going to process given URL.
+            if (
+                    same_domain and
+                    not same_path and
+                    not media and
+                    url not in self.pile and
+                    url not in self.trash):
+                self.pile.append(url)
 
     def fetch_emails(self, target, loot):
         """Method that fetches Emails."""
-        data = self.get_page_source(target).decode('utf8')
+        try:
+            data = self.get_page_source(target).decode('utf8')
+        except UnicodeDecodeError:
+            return
+
         regex = re.compile(r'[\w\.-]+@[\w\.-]+')
         emails = re.findall(regex, data)
 
@@ -176,7 +219,11 @@ class WebSpider:
 
     def fetch_comments(self, target, loot):
         """Method that fetches comments."""
-        data = self.get_page_source(target).decode('utf8')
+        try:
+            data = self.get_page_source(target).decode('utf8')
+        except UnicodeDecodeError:
+            return None
+
         regex = re.compile(r'<!--(.*)-->')
         comments = re.findall(regex, data)
 
