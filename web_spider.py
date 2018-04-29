@@ -20,7 +20,7 @@ class WebSpider:
     settings['config_file'] = 'config.json'
     settings['headers'] = dict()
 
-    media_types = ['.jpg', '.png', '.gif', '.pdf']
+    media_types = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.pptx']
 
     pile = list()
     trash = list()
@@ -34,6 +34,7 @@ class WebSpider:
             self.container += '/'
 
         self.load_config()
+        self.cts = calendar.timegm(time.gmtime())
 
     def load_config(self):
         """Parses and loads configuration from config.json file."""
@@ -94,13 +95,11 @@ class WebSpider:
 
     def save_loot(self):
         """Saves fetched results on drive."""
-        cts = calendar.timegm(time.gmtime())
-
         for target in self.loot:
             if not os.path.isdir(self.container + 'loot/' + target):
                 os.makedirs(self.container + 'loot/' + target, 0o700)
 
-            path = self.container + 'loot/' + target + '/' + str(cts)
+            path = self.container + 'loot/' + target + '/' + str(self.cts)
 
             if not os.path.isdir(path):
                 os.mkdir(path, 0o700)
@@ -114,6 +113,10 @@ class WebSpider:
                 except KeyError:
                     pass
 
+        # Flush.
+        for target in self.loot.copy():
+            self.loot.pop(target, None)
+
     def run(self):
         """Method that executes WebSpider."""
         for target in self.settings['targets']:
@@ -126,7 +129,7 @@ class WebSpider:
 
             while bool(self.pile):
                 for url in self.pile:
-                    print(url)
+                    print('.', end='', flush=True)
                     target['url'] = url
 
                     try:
@@ -150,7 +153,8 @@ class WebSpider:
                     self.pile.remove(url)
                     self.trash.append(url)
 
-        self.save_loot()
+            print("\n")
+            self.save_loot()
 
     def fetch_urls(self, target, loot):
         """Method that fetches URLs."""
