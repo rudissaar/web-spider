@@ -2,6 +2,7 @@
     "targets": [
         {
             "url": "https://google.com",
+            'recursive': true,
             "fetch_urls": true,
             "fetch_emails": true,
             "fetch_comments": true

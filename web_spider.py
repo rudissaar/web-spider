@@ -182,17 +182,21 @@ class WebSpider:
             if not media and url not in loot['urls']:
                 loot['urls'].append(url)
 
-            same_domain = urlsplit(url).netloc == urlsplit(target['url']).netloc
-            same_path = urlsplit(url).path == urlsplit(target['url']).path
+            try:
+                if target['recursive']:
+                    same_domain = urlsplit(url).netloc == urlsplit(target['url']).netloc
+                    same_path = urlsplit(url).path == urlsplit(target['url']).path
 
-            # Logic that decides if we are going to process given URL.
-            if (
-                    same_domain and
-                    not same_path and
-                    not media and
-                    url not in self.pile and
-                    url not in self.trash):
-                self.pile.append(url)
+                    # Logic that decides if we are going to process given URL.
+                    if (
+                            same_domain and
+                            not same_path and
+                            not media and
+                            url not in self.pile and
+                            url not in self.trash):
+                        self.pile.append(url)
+            except KeyError:
+                pass
 
     def fetch_emails(self, target, loot):
         """Method that fetches Emails."""
