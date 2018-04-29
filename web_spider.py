@@ -109,6 +109,14 @@ class WebSpider:
             except KeyError:
                 pass
 
+            try:
+                if self.loot[target]['comments']:
+                    with open(path + '/comments.txt', 'w+') as file_handle:
+                        for comment in self.loot[target]['comments']:
+                            file_handle.write(comment + "\n")
+            except KeyError:
+                pass
+
     def run(self):
         """Method that executes WebSpider."""
         for target in self.settings['targets']:
@@ -124,6 +132,12 @@ class WebSpider:
             try:
                 if target['fetch_emails']:
                     self.fetch_emails(target, self.loot[netloc])
+            except KeyError:
+                pass
+
+            try:
+                if target['fetch_comments']:
+                    self.fetch_comments(target, self.loot[netloc])
             except KeyError:
                 pass
 
@@ -153,9 +167,9 @@ class WebSpider:
 
     def fetch_emails(self, target, loot):
         """Method that fetches Emails."""
-        data = self.get_page_source(target)
+        data = self.get_page_source(target).decode('utf8')
         regex = re.compile(r'[\w\.-]+@[\w\.-]+')
-        emails = re.findall(regex, data.decode('utf8'))
+        emails = re.findall(regex, data)
 
         loot['emails'] = list()
 
@@ -166,10 +180,24 @@ class WebSpider:
         if self.settings['escaped_email_symbols']:
             for escaped_symbol in self.settings['escaped_email_symbols']:
                 regex = re.compile(r'[\w\.-]+' + re.escape(escaped_symbol) + r'[\w\.-]+')
-                emails = re.findall(regex, data.decode('utf8'))
+                emails = re.findall(regex, data)
 
                 for escaped_email in emails:
                     email = escaped_email.replace(escaped_symbol, '@')
 
                     if not email in loot['emails']:
                         loot['emails'].append(email)
+
+    def fetch_comments(self, target, loot):
+        """Method that fetches comments."""
+        data = self.get_page_source(target).decode('utf8')
+        regex = re.compile(r'<!--(.*)-->')
+        comments = re.findall(regex, data)
+
+        loot['comments'] = list()
+
+        for comment in comments:
+            comment = comment.strip()
+
+            if not comment in loot['comments']:
+                loot['comments'].append(comment)

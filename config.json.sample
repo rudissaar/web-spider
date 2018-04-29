@@ -2,8 +2,9 @@
     "targets": [
         {
             "url": "https://google.com",
-            "fetch_urls": 1,
-            "fetch_emails": 1
+            "fetch_urls": true,
+            "fetch_emails": true,
+            "fetch_comments": true
         }
     ],
     "headers": {
