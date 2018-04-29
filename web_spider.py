@@ -83,39 +83,25 @@ class WebSpider:
 
     def save_loot(self):
         """Saves fetched results on drive."""
+        cts = calendar.timegm(time.gmtime())
+
         for target in self.loot:
             if not os.path.isdir(self.container + 'loot/' + target):
                 os.makedirs(self.container + 'loot/' + target, 0o700)
 
-            cts = calendar.timegm(time.gmtime())
             path = self.container + 'loot/' + target + '/' + str(cts)
 
             if not os.path.isdir(path):
                 os.mkdir(path, 0o700)
 
-            try:
-                if self.loot[target]['urls']:
-                    with open(path + '/urls.txt', 'w+') as file_handle:
-                        for url in self.loot[target]['urls']:
-                            file_handle.write(url + "\n")
-            except KeyError:
-                pass
-
-            try:
-                if self.loot[target]['emails']:
-                    with open(path + '/emails.txt', 'w+') as file_handle:
-                        for email in self.loot[target]['emails']:
-                            file_handle.write(email + "\n")
-            except KeyError:
-                pass
-
-            try:
-                if self.loot[target]['comments']:
-                    with open(path + '/comments.txt', 'w+') as file_handle:
-                        for comment in self.loot[target]['comments']:
-                            file_handle.write(comment + "\n")
-            except KeyError:
-                pass
+            for pool, _ in self.loot[target].items():
+                try:
+                    if self.loot[target][pool]:
+                        with open(path + '/' + pool + '.txt', 'w+') as file_handle:
+                            for resource in self.loot[target][pool]:
+                                file_handle.write(resource + "\n")
+                except KeyError:
+                    pass
 
     def run(self):
         """Method that executes WebSpider."""
