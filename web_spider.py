@@ -127,34 +127,30 @@ class WebSpider:
             self.pile = [target['url']]
             self.trash.clear()
 
-            while bool(self.pile):
-                for url in self.pile:
-                    print('.', end='', flush=True)
-                    target['url'] = url
+            try:
+                while bool(self.pile):
+                    for url in self.pile:
+                        print('.', end='', flush=True)
+                        target['url'] = url
 
-                    try:
-                        if target['fetch_urls']:
+                        if 'fetch_urls' in target and target['fetch_urls']:
                             self.fetch_urls(target, self.loot[netloc])
-                    except KeyError:
-                        pass
 
-                    try:
-                        if target['fetch_emails']:
+                        if 'fetch_emails' in target and target['fetch_emails']:
                             self.fetch_emails(target, self.loot[netloc])
-                    except KeyError:
-                        pass
 
-                    try:
-                        if target['fetch_comments']:
+                        if 'fetch_comments' in target and target['fetch_comments']:
                             self.fetch_comments(target, self.loot[netloc])
-                    except KeyError:
-                        pass
 
-                    self.pile.remove(url)
-                    self.trash.append(url)
+                        self.pile.remove(url)
+                        self.trash.append(url)
 
-            print("\n")
-            self.save_loot()
+                print("\n")
+                self.save_loot()
+            except KeyboardInterrupt:
+                print("\n")
+                self.save_loot()
+                exit(0)
 
     def fetch_urls(self, target, loot):
         """Method that fetches URLs."""
