@@ -242,3 +242,8 @@ class WebSpider:
 
             if not comment in loot['comments']:
                 loot['comments'].append(comment)
+
+
+if __name__ == "__main__":
+    SPIDER = WebSpider()
+    SPIDER.run()
