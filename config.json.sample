@@ -1,11 +1,18 @@
 {
     "targets": [
         {
-            "url": "https://google.com",
+            "url": "https://www.imdb.com",
             'recursive': true,
             "fetch_urls": true,
             "fetch_emails": true,
             "fetch_comments": true
+        },
+        {
+            "skip": true,
+            "url": "https://google.com",
+            'recursive': false,
+            "fetch_urls": false,
+            "fetch_emails": true
         }
     ],
     "headers": {

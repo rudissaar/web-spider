@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 
+
 class WebSpider:
     """Simple WebSpider."""
     settings = dict()
@@ -120,6 +121,9 @@ class WebSpider:
     def run(self):
         """Method that executes WebSpider."""
         for target in self.settings['targets']:
+            if 'skip' in target and target['skip']:
+                continue
+
             netloc = urlsplit(target['url']).netloc
             print('> Spidering domain: ' + netloc)
 
