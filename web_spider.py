@@ -36,6 +36,7 @@ class WebSpider:
 
         self.load_config()
         self.cts = calendar.timegm(time.gmtime())
+        self.counter = 0
 
     def load_config(self):
         """Parses and loads configuration from config.json file."""
@@ -130,10 +131,16 @@ class WebSpider:
             self.loot[netloc] = dict()
             self.pile = [target['url']]
             self.trash.clear()
+            self.counter = 0
 
             try:
                 while bool(self.pile):
                     for url in self.pile:
+                        if 'limit' in target and self.counter >= int(target['limit']):
+                            self.pile.clear()
+                            break
+
+                        self.counter += 1
                         print('.', end='', flush=True)
                         target['url'] = url
 
