@@ -175,7 +175,10 @@ class WebSpider:
         for line in soup.find_all('a'):
             url = line.get('href')
 
-            if not url:
+            if url and '#' in url:
+                url = url[:url.index('#')]
+
+            if not bool(url):
                 continue
 
             if url[:4] != 'http' and url[:2] != '//':
