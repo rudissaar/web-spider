@@ -13,7 +13,7 @@ import urllib3
 from bs4 import BeautifulSoup
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
-
+import web_spider_helper as helper
 
 class WebSpider:
     """Simple WebSpider."""
@@ -62,16 +62,6 @@ class WebSpider:
         except ValidationError:
             return False
 
-    @staticmethod
-    def combine_uri(part_one, part_two):
-        """Method that deals with combining URLs."""
-        if not part_one.endswith('/'):
-            part_one += '/'
-        if part_two.startswith('/'):
-            part_two = part_two[1:]
-
-        return part_one + part_two
-
     @property
     def user_agent(self):
         """Returns value of user_agent property."""
@@ -82,14 +72,14 @@ class WebSpider:
         """Assings new value to user_agent property."""
         self.settings['headers']['user-agent'] = value
 
-    def get_page_source(self, target):
+    def get_page_source(self, url):
         """Makes request to target and returns result."""
         http = urllib3.PoolManager(headers=self.settings['headers'])
 
         try:
-            request = http.request('GET', target['url'])
+            request = http.request('GET', url)
         except UnicodeEncodeError:
-            print('> Failed to encode URL: ' + target['url'])
+            print('> Failed to encode URL: ' + url)
             return b''
 
         page_source = request.data
@@ -136,6 +126,7 @@ class WebSpider:
             try:
                 while bool(self.pile):
                     for url in self.pile:
+
                         if 'limit' in target and self.counter >= int(target['limit']):
                             self.pile.clear()
                             break
@@ -166,8 +157,11 @@ class WebSpider:
     def fetch_urls(self, target, loot):
         """Method that fetches URLs and also drives whole Web Spider."""
         # pylint: disable=R0912
-        protocol = urlparse(target['url'])[0]
-        data = self.get_page_source(target)
+        netloc = urlsplit(target['url']).netloc
+        scheme = urlparse(target['url'])[0]
+        url = helper.finalize_url(target['url'], netloc, scheme)
+        data = self.get_page_source(url)
+
         soup = BeautifulSoup(data, 'html.parser')
         media = False
 
@@ -209,10 +203,8 @@ class WebSpider:
             if not bool(url):
                 continue
 
-            if url[:4] != 'http' and url[:2] != '//':
-                url = self.combine_uri(target['url'], url)
-            elif url[:2] == '//':
-                url = protocol + ':' + url
+            # Assingn finalized URL to variable.
+            url = helper.finalize_url(url, netloc, scheme)
 
             if str(os.path.splitext(urlsplit(url).path)[1]).lower() in self.media_types:
                 media = True
@@ -222,7 +214,7 @@ class WebSpider:
 
             try:
                 if target['recursive']:
-                    same_domain = urlsplit(url).netloc == urlsplit(target['url']).netloc
+                    same_domain = urlsplit(url).netloc == netloc
                     same_path = urlsplit(url).path == urlsplit(target['url']).path
 
                     # Logic that decides if we are going to process given URL.
@@ -239,7 +231,10 @@ class WebSpider:
     def fetch_emails(self, target, loot):
         """Method that fetches Emails."""
         try:
-            data = self.get_page_source(target).decode('utf8')
+            netloc = urlsplit(target['url']).netloc
+            scheme = urlparse(target['url'])[0]
+            url = helper.finalize_url(target['url'], netloc, scheme)
+            data = self.get_page_source(url).decode('utf8')
         except UnicodeDecodeError:
             return
 
@@ -266,7 +261,10 @@ class WebSpider:
     def fetch_comments(self, target, loot):
         """Method that fetches comments."""
         try:
-            data = self.get_page_source(target).decode('utf8')
+            netloc = urlsplit(target['url']).netloc
+            scheme = urlparse(target['url'])[0]
+            url = helper.finalize_url(target['url'], netloc, scheme)
+            data = self.get_page_source(url).decode('utf8')
         except UnicodeDecodeError:
             return None
 
