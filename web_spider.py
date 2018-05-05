@@ -109,7 +109,7 @@ class WebSpider:
             for pool, _ in self.loot[target].items():
                 try:
                     if self.loot[target][pool]:
-                        with open(path + '/' + pool + '.txt', 'w+') as file_handle:
+                        with open(path + '/' + pool + '.txt', 'a+') as file_handle:
                             for resource in self.loot[target][pool]:
                                 file_handle.write(resource + "\n")
                 except KeyError:
@@ -164,7 +164,8 @@ class WebSpider:
                 exit(0)
 
     def fetch_urls(self, target, loot):
-        """Method that fetches URLs."""
+        """Method that fetches URLs and also drives whole Web Spider."""
+        # pylint: disable=R0913
         protocol = urlparse(target['url'])[0]
         data = self.get_page_source(target)
         soup = BeautifulSoup(data, 'html.parser')
@@ -172,8 +173,28 @@ class WebSpider:
 
         loot['urls'] = list()
 
+        # If we are fetching for emails, then we need loot pool for it.
+        if 'fetch_emails' in target and target['fetch_emails']:
+            loot['emails'] = list()
+
         for line in soup.find_all('a'):
             url = line.get('href')
+
+            # If href is empty then there is no need to execute rest of the logic.
+            if not bool(url):
+                continue
+
+            # Remove any whitespace surrounding URL.
+            url = url.strip()
+
+            # If href is link to email and we are also fetching for emails,
+            # then append email to loot.
+            if url.startswith('mailto:'):
+                if 'fetch_emails' in target and target['fetch_emails']:
+                    email = url[url.index('mailto:') + 7:]
+                    loot['emails'].append(email)
+
+                continue
 
             if url and '#' in url:
                 url = url[:url.index('#')]
