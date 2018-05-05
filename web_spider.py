@@ -165,7 +165,7 @@ class WebSpider:
 
     def fetch_urls(self, target, loot):
         """Method that fetches URLs and also drives whole Web Spider."""
-        # pylint: disable=R0913
+        # pylint: disable=R0912
         protocol = urlparse(target['url'])[0]
         data = self.get_page_source(target)
         soup = BeautifulSoup(data, 'html.parser')
@@ -194,8 +194,15 @@ class WebSpider:
                     email = url[url.index('mailto:') + 7:]
                     loot['emails'].append(email)
 
+                # We found out it was email link, we dont need to execute rest of the block.
                 continue
 
+            # If href is link for telephone number then we are just ignoring it for the moment.
+            if url.startswith('tel:'):
+                continue
+
+            # This Web Spider is currently only processing static output,
+            # as hashtags/anchors are browser's thing we are currently trimming it from URL.
             if url and '#' in url:
                 url = url[:url.index('#')]
 
