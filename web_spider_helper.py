@@ -17,7 +17,7 @@ def finalize_url(raw_url, netloc, scheme):
     url = raw_url
 
     if raw_url[:4] != 'http' and raw_url[:2] != '//':
-        url = combine_uri(netloc, raw_url)
+        url = combine_uri(scheme + '://' + netloc, raw_url)
     elif raw_url[:2] == '//':
         url = scheme + ':' + raw_url
     elif raw_url[:1] == '/' and  raw_url[1] != '/':

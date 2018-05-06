@@ -9,11 +9,11 @@ import os
 import time
 import re
 from urllib.parse import urlparse, urlsplit
-import urllib3
 from bs4 import BeautifulSoup
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 import web_spider_helper as helper
+from web_spider_target import WebSpiderTarget
 
 class WebSpider:
     """Simple WebSpider."""
@@ -28,8 +28,6 @@ class WebSpider:
     loot = dict()
 
     def __init__(self):
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
         self.container = os.path.dirname(os.path.realpath(__file__))
         if not self.container.endswith('/'):
             self.container += '/'
@@ -72,19 +70,6 @@ class WebSpider:
         """Assings new value to user_agent property."""
         self.settings['headers']['user-agent'] = value
 
-    def get_page_source(self, url):
-        """Makes request to target and returns result."""
-        http = urllib3.PoolManager(headers=self.settings['headers'])
-
-        try:
-            request = http.request('GET', url)
-        except UnicodeEncodeError:
-            print('> Failed to encode URL: ' + url)
-            return b''
-
-        page_source = request.data
-        return page_source
-
     def save_loot(self):
         """Saves fetched results on drive."""
         for target in self.loot:
@@ -111,44 +96,49 @@ class WebSpider:
 
     def run(self):
         """Method that executes WebSpider."""
-        for target in self.settings['targets']:
-            if 'skip' in target and target['skip']:
+        for target_dict in self.settings['targets']:
+            target = WebSpiderTarget(target_dict)
+
+            if target.skip:
                 continue
 
-            netloc = urlsplit(target['url']).netloc
-            print('> Spidering domain: ' + netloc)
+            print('> Spidering domain: ' + target.netloc)
 
-            self.loot[netloc] = dict()
-            self.pile = [target['url']]
+            self.loot[target.netloc] = dict()
+            self.pile = [target.url]
             self.trash.clear()
             self.counter = 0
 
             try:
                 while bool(self.pile):
+                    print(self.pile)
                     for url in self.pile:
 
-                        if 'limit' in target and self.counter >= int(target['limit']):
+                        if target.limit is not None and self.counter >= target.limit:
                             self.pile.clear()
                             break
 
                         self.counter += 1
                         print('.', end='', flush=True)
-                        target['url'] = url
+                        target.url = url
 
-                        if 'fetch_urls' in target and target['fetch_urls']:
-                            self.fetch_urls(target, self.loot[netloc])
+                        if target.fetch_urls:
+                            if target.netloc not in self.loot:
+                                self.loot[target.netloc] = dict()
 
-                        if 'fetch_emails' in target and target['fetch_emails']:
-                            self.fetch_emails(target, self.loot[netloc])
+                            self.fetch_urls(target, self.loot[target.netloc])
 
-                        if 'fetch_comments' in target and target['fetch_comments']:
-                            self.fetch_comments(target, self.loot[netloc])
+                        if target.fetch_emails:
+                            self.fetch_emails(target, self.loot[target.netloc])
+
+                        if target.fetch_emails:
+                            self.fetch_comments(target, self.loot[target.netloc])
 
                         self.pile.remove(url)
                         self.trash.append(url)
 
+                    self.save_loot()
                 print("\n")
-                self.save_loot()
             except KeyboardInterrupt:
                 print("\n")
                 self.save_loot()
@@ -157,10 +147,8 @@ class WebSpider:
     def fetch_urls(self, target, loot):
         """Method that fetches URLs and also drives whole Web Spider."""
         # pylint: disable=R0912
-        netloc = urlsplit(target['url']).netloc
-        scheme = urlparse(target['url'])[0]
-        url = helper.finalize_url(target['url'], netloc, scheme)
-        data = self.get_page_source(url)
+        url = helper.finalize_url(target.url, target.netloc, target.scheme)
+        data = target.get_page_source(url, self.settings['headers'])
 
         soup = BeautifulSoup(data, 'html.parser')
         media = False
@@ -168,7 +156,7 @@ class WebSpider:
         loot['urls'] = list()
 
         # If we are fetching for emails, then we need loot pool for it.
-        if 'fetch_emails' in target and target['fetch_emails']:
+        if target.fetch_emails:
             loot['emails'] = list()
 
         for line in soup.find_all('a'):
@@ -184,7 +172,7 @@ class WebSpider:
             # If href is link to email and we are also fetching for emails,
             # then append email to loot.
             if url.startswith('mailto:'):
-                if 'fetch_emails' in target and target['fetch_emails']:
+                if target.fetch_emails:
                     email = url[url.index('mailto:') + 7:]
                     loot['emails'].append(email)
 
@@ -204,18 +192,18 @@ class WebSpider:
                 continue
 
             # Assingn finalized URL to variable.
-            url = helper.finalize_url(url, netloc, scheme)
+            url = helper.finalize_url(url, target.netloc, target.scheme)
 
             if str(os.path.splitext(urlsplit(url).path)[1]).lower() in self.media_types:
                 media = True
 
-            if not media and url not in loot['urls']:
+            if not media and url not in self.trash:
                 loot['urls'].append(url)
 
             try:
-                if target['recursive']:
-                    same_domain = urlsplit(url).netloc == netloc
-                    same_path = urlsplit(url).path == urlsplit(target['url']).path
+                if target.recursive:
+                    same_domain = urlsplit(url).netloc == target.netloc
+                    same_path = urlsplit(url).path == urlsplit(target.url).path
 
                     # Logic that decides if we are going to process given URL.
                     if (
@@ -231,10 +219,8 @@ class WebSpider:
     def fetch_emails(self, target, loot):
         """Method that fetches Emails."""
         try:
-            netloc = urlsplit(target['url']).netloc
-            scheme = urlparse(target['url'])[0]
-            url = helper.finalize_url(target['url'], netloc, scheme)
-            data = self.get_page_source(url).decode('utf8')
+            url = helper.finalize_url(target.url, target.netloc, target.scheme)
+            data = target.get_page_source(url, self.settings['headers']).decode('utf8')
         except UnicodeDecodeError:
             return
 
@@ -261,10 +247,8 @@ class WebSpider:
     def fetch_comments(self, target, loot):
         """Method that fetches comments."""
         try:
-            netloc = urlsplit(target['url']).netloc
-            scheme = urlparse(target['url'])[0]
-            url = helper.finalize_url(target['url'], netloc, scheme)
-            data = self.get_page_source(url).decode('utf8')
+            url = helper.finalize_url(target.url, target.netloc, target.scheme)
+            data = target.get_page_source(url, self.settings['headers']).decode('utf8')
         except UnicodeDecodeError:
             return None
 
