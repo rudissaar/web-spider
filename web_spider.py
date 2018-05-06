@@ -111,9 +111,7 @@ class WebSpider:
 
             try:
                 while bool(self.pile):
-                    print(self.pile)
                     for url in self.pile:
-
                         if target.limit is not None and self.counter >= target.limit:
                             self.pile.clear()
                             break
@@ -121,6 +119,9 @@ class WebSpider:
                         self.counter += 1
                         print('.', end='', flush=True)
                         target.url = url
+
+                        self.pile.remove(url)
+                        self.trash.append(url)
 
                         if target.fetch_urls:
                             if target.netloc not in self.loot:
@@ -133,9 +134,6 @@ class WebSpider:
 
                         if target.fetch_emails:
                             self.fetch_comments(target, self.loot[target.netloc])
-
-                        self.pile.remove(url)
-                        self.trash.append(url)
 
                     self.save_loot()
                 print("\n")
@@ -197,7 +195,7 @@ class WebSpider:
             if str(os.path.splitext(urlsplit(url).path)[1]).lower() in self.media_types:
                 media = True
 
-            if not media and url not in self.trash:
+            if not media and url not in loot['urls'] and url not in self.trash:
                 loot['urls'].append(url)
 
             try:
