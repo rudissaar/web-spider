@@ -154,7 +154,7 @@ class WebSpider:
         loot['urls'] = list()
 
         # If we are fetching for emails, then we need loot pool for it.
-        if target.fetch_emails:
+        if target.fetch_emails and 'emails' not in loot:
             loot['emails'] = list()
 
         for line in soup.find_all('a'):
@@ -172,7 +172,8 @@ class WebSpider:
             if url.startswith('mailto:'):
                 if target.fetch_emails:
                     email = url[url.index('mailto:') + 7:]
-                    loot['emails'].append(email)
+                    if email not in loot['emails']:
+                        loot['emails'].append(email)
 
                 # We found out it was email link, we dont need to execute rest of the block.
                 continue
@@ -225,7 +226,8 @@ class WebSpider:
         regex = re.compile(r'[\w\.-]+@[\w\.-]+')
         emails = re.findall(regex, data)
 
-        loot['emails'] = list()
+        if 'emails' not in loot:
+            loot['emails'] = list()
 
         for email in emails:
             if not email in loot['emails']:
@@ -253,7 +255,8 @@ class WebSpider:
         regex = re.compile(r'<!--(.*)-->')
         comments = re.findall(regex, data)
 
-        loot['comments'] = list()
+        if 'comments' not in loot:
+            loot['comments'] = list()
 
         for comment in comments:
             comment = comment.strip()
