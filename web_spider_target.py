@@ -8,7 +8,6 @@ from urllib.parse import urlparse, urlsplit
 
 class WebSpiderTarget:
     config = dict()
-    config['skip'] = None
     config['limit'] = None
     config['url'] = None
     config['netloc'] = None
@@ -25,6 +24,9 @@ class WebSpiderTarget:
 
         if 'skip' in target_dict:
             self.skip = target_dict['skip']
+        else:
+            self.skip = False
+
         if 'limit' in target_dict:
             self.limit = target_dict['limit']
         if 'url' in target_dict:
