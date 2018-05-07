@@ -24,7 +24,7 @@ class WebSpider:
     media_types = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.pptx']
 
     pile = list()
-    trash = dict()
+    trash = list()
     loot = dict()
 
     def __init__(self):
@@ -70,20 +70,6 @@ class WebSpider:
         """Assings new value to user_agent property."""
         self.settings['headers']['user-agent'] = value
 
-    def setup_trash(self):
-        """Sets up trash."""
-        if 'urls' not in self.trash:
-            self.trash['urls'] = list()
-        if 'emails' not in self.trash:
-            self.trash['emails'] = list()
-        if 'comments' not in self.trash:
-            self.trash['comments'] = list()
-
-    def clear_trash(self):
-        """Clears/Resets trash."""
-        for pool, _ in self.trash.items():
-            self.trash[pool].clear()
-
     def save_loot(self):
         """Saves fetched results on drive."""
         for target in self.loot:
@@ -110,8 +96,6 @@ class WebSpider:
 
     def run(self):
         """Method that executes WebSpider."""
-        self.setup_trash()
-
         for target_dict in self.settings['targets']:
             target = WebSpiderTarget(target_dict)
 
@@ -122,7 +106,7 @@ class WebSpider:
 
             self.loot[target.netloc] = dict()
             self.pile = [target.url]
-            self.clear_trash()
+            self.trash.clear()
             self.counter = 0
 
             try:
@@ -137,7 +121,7 @@ class WebSpider:
                         target.url = url
 
                         self.pile.remove(url)
-                        self.trash['urls'].append(url)
+                        self.trash.append(url)
 
                         if target.fetch_urls:
                             if target.netloc not in self.loot:
@@ -151,7 +135,7 @@ class WebSpider:
                         if target.fetch_emails:
                             self.fetch_comments(target, self.loot[target.netloc])
 
-                    self.save_loot()
+                self.save_loot()
                 print("\n")
             except KeyboardInterrupt:
                 print("\n")
@@ -161,13 +145,15 @@ class WebSpider:
     def fetch_urls(self, target, loot):
         """Method that fetches URLs and also drives whole Web Spider."""
         # pylint: disable=R0912
+
         url = helper.finalize_url(target.url, target.netloc, target.scheme)
         data = target.get_page_source(url, self.settings['headers'])
 
         soup = BeautifulSoup(data, 'html.parser')
         media = False
 
-        loot['urls'] = list()
+        if 'urls' not in loot:
+            loot['urls'] = list()
 
         # If we are fetching for emails, then we need loot pool for it.
         if target.fetch_emails and 'emails' not in loot:
@@ -188,9 +174,8 @@ class WebSpider:
             if url.startswith('mailto:'):
                 if target.fetch_emails:
                     email = url[url.index('mailto:') + 7:]
-                    if email not in loot['emails'] and email not in self.trash['emails']:
+                    if email not in loot['emails']:
                         loot['emails'].append(email)
-                        self.trash['emails'].append(email)
 
                 # We found out it was email link, we dont need to execute rest of the block.
                 continue
@@ -213,7 +198,7 @@ class WebSpider:
             if str(os.path.splitext(urlsplit(url).path)[1]).lower() in self.media_types:
                 media = True
 
-            if not media and url not in loot['urls'] and url not in self.trash['urls']:
+            if not media and url not in loot['urls']:
                 loot['urls'].append(url)
 
             try:
@@ -227,7 +212,7 @@ class WebSpider:
                             not same_path and
                             not media and
                             url not in self.pile and
-                            url not in self.trash['urls']):
+                            url not in self.trash):
                         self.pile.append(url)
             except KeyError:
                 pass
@@ -247,9 +232,8 @@ class WebSpider:
             loot['emails'] = list()
 
         for email in emails:
-            if not email in loot['emails'] and email not in self.trash['emails']:
+            if email not in loot['emails']:
                 loot['emails'].append(email)
-                self.trash['emails'].append(email)
 
         if self.settings['escaped_email_symbols']:
             for escaped_symbol in self.settings['escaped_email_symbols']:
@@ -279,9 +263,8 @@ class WebSpider:
         for comment in comments:
             comment = comment.strip()
 
-            if comment not in loot['comments'] and comment not in self.trash['comments'] :
+            if comment not in loot['comments']:
                 loot['comments'].append(comment)
-                self.trash['comments'].append(comment)
 
 
 if __name__ == "__main__":
