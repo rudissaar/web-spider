@@ -15,13 +15,14 @@ from django.core.exceptions import ValidationError
 import web_spider_helper as helper
 from web_spider_target import WebSpiderTarget
 
+
 class WebSpider:
     """Simple WebSpider."""
     settings = dict()
     settings['config_file'] = 'config.json'
     settings['headers'] = dict()
 
-    media_types = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.pptx']
+    media_types = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.pptx', 'ppt', '.svg']
 
     pile = list()
     trash = list()
@@ -146,7 +147,7 @@ class WebSpider:
         """Method that fetches URLs and also drives whole Web Spider."""
         # pylint: disable=R0912
 
-        url = helper.finalize_url(target.url, target.netloc, target.scheme)
+        url = helper.finalise_url(target.url, target.netloc, target.scheme)
         data = target.get_page_source(url, self.settings['headers'])
 
         soup = BeautifulSoup(data, 'html.parser')
@@ -174,6 +175,8 @@ class WebSpider:
             if url.startswith('mailto:'):
                 if target.fetch_emails:
                     email = url[url.index('mailto:') + 7:]
+                    email = helper.finalise_email(email)
+
                     if email not in loot['emails']:
                         loot['emails'].append(email)
 
@@ -192,8 +195,8 @@ class WebSpider:
             if not bool(url):
                 continue
 
-            # Assingn finalized URL to variable.
-            url = helper.finalize_url(url, target.netloc, target.scheme)
+            # Assign finalised URL to variable.
+            url = helper.finalise_url(url, target.netloc, target.scheme)
 
             if str(os.path.splitext(urlsplit(url).path)[1]).lower() in self.media_types:
                 media = True
@@ -220,7 +223,7 @@ class WebSpider:
     def fetch_emails(self, target, loot):
         """Method that fetches Emails."""
         try:
-            url = helper.finalize_url(target.url, target.netloc, target.scheme)
+            url = helper.finalise_url(target.url, target.netloc, target.scheme)
             data = target.get_page_source(url, self.settings['headers']).decode('utf8')
         except UnicodeDecodeError:
             return
@@ -232,6 +235,8 @@ class WebSpider:
             loot['emails'] = list()
 
         for email in emails:
+            email = helper.finalise_email(email)
+
             if email not in loot['emails']:
                 loot['emails'].append(email)
 
@@ -242,6 +247,7 @@ class WebSpider:
 
                 for escaped_email in emails:
                     email = escaped_email.replace(escaped_symbol, '@')
+                    email = helper.finalise_email(email)
 
                     if not email in loot['emails']:
                         loot['emails'].append(email)
@@ -249,7 +255,7 @@ class WebSpider:
     def fetch_comments(self, target, loot):
         """Method that fetches comments."""
         try:
-            url = helper.finalize_url(target.url, target.netloc, target.scheme)
+            url = helper.finalise_url(target.url, target.netloc, target.scheme)
             data = target.get_page_source(url, self.settings['headers']).decode('utf8')
         except UnicodeDecodeError:
             return None

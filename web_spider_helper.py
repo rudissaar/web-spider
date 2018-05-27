@@ -3,6 +3,7 @@
 
 """File that contains Helper functions for Web Spider"""
 
+
 def combine_uri(part_one, part_two):
     """Method that deals with combining URLs."""
     if not part_one.endswith('/'):
@@ -12,8 +13,9 @@ def combine_uri(part_one, part_two):
 
     return part_one + part_two
 
-def finalize_url(raw_url, netloc, scheme):
-    """Method that finalizes URL."""
+
+def finalise_url(raw_url, netloc, scheme):
+    """Method that finalises URL."""
     url = raw_url
 
     if raw_url[:4] != 'http' and raw_url[:2] != '//':
@@ -24,3 +26,13 @@ def finalize_url(raw_url, netloc, scheme):
         url = scheme + ':' + netloc + raw_url
 
     return url
+
+
+def finalise_email(email):
+    """Method that finalises email and also applies common fixes."""
+    email = email.lower()
+    email = email.strip('.')
+    email = email.replace(' dot ', '.')
+    email = email.replace(' at ', '@')
+
+    return email
