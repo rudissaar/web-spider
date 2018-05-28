@@ -8,10 +8,8 @@ import json
 import os
 import time
 import re
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
-from django.core.validators import URLValidator
-from django.core.exceptions import ValidationError
 import web_spider_helper as helper
 from web_spider_target import WebSpiderTarget
 
@@ -22,7 +20,7 @@ class WebSpider:
     settings['config_file'] = 'config.json'
     settings['headers'] = dict()
 
-    media_types = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.pptx', 'ppt', '.svg']
+    media_types = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.pptx', '.ppt', '.svg']
 
     pile = list()
     trash = list()
@@ -51,16 +49,6 @@ class WebSpider:
             )
             exit(1)
 
-    @staticmethod
-    def validate_url(value):
-        """Helper method that checks if URL has valid format."""
-        validator = URLValidator()
-        try:
-            validator(value)
-            return True
-        except ValidationError:
-            return False
-
     @property
     def user_agent(self):
         """Returns value of user_agent property."""
@@ -68,7 +56,7 @@ class WebSpider:
 
     @user_agent.setter
     def user_agent(self, value):
-        """Assings new value to user_agent property."""
+        """Assigns new value to user_agent property."""
         self.settings['headers']['user-agent'] = value
 
     def save_loot(self):
@@ -146,11 +134,10 @@ class WebSpider:
     def fetch_urls(self, target, loot):
         """Method that fetches URLs and also drives whole Web Spider."""
         # pylint: disable=R0912
-
         url = helper.finalise_url(target.url, target.netloc, target.scheme)
         data = target.get_page_source(url, self.settings['headers'])
 
-        soup = BeautifulSoup(data, 'html.parser')
+        soup = BeautifulSoup(data, 'html.parser', from_encoding="iso-8859-1")
         media = False
 
         if 'urls' not in loot:
@@ -258,7 +245,7 @@ class WebSpider:
             url = helper.finalise_url(target.url, target.netloc, target.scheme)
             data = target.get_page_source(url, self.settings['headers']).decode('utf8')
         except UnicodeDecodeError:
-            return None
+            return
 
         regex = re.compile(r'<!--(.*)-->')
         comments = re.findall(regex, data)
