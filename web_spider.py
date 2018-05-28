@@ -177,7 +177,7 @@ class WebSpider:
                     email = url[url.index('mailto:') + 7:]
                     email = helper.finalise_email(email)
 
-                    if email not in loot['emails']:
+                    if bool(email) and email not in loot['emails']:
                         loot['emails'].append(email)
 
                 # We found out it was email link, we dont need to execute rest of the block.
@@ -221,7 +221,7 @@ class WebSpider:
                 pass
 
     def fetch_emails(self, target, loot):
-        """Method that fetches Emails."""
+        """Method that fetches emails."""
         try:
             url = helper.finalise_url(target.url, target.netloc, target.scheme)
             data = target.get_page_source(url, self.settings['headers']).decode('utf8')
@@ -237,7 +237,7 @@ class WebSpider:
         for email in emails:
             email = helper.finalise_email(email)
 
-            if email not in loot['emails']:
+            if bool(email) and email not in loot['emails']:
                 loot['emails'].append(email)
 
         if self.settings['escaped_email_symbols']:
@@ -249,7 +249,7 @@ class WebSpider:
                     email = escaped_email.replace(escaped_symbol, '@')
                     email = helper.finalise_email(email)
 
-                    if not email in loot['emails']:
+                    if bool(email) and not email in loot['emails']:
                         loot['emails'].append(email)
 
     def fetch_comments(self, target, loot):

@@ -30,8 +30,18 @@ def finalise_url(raw_url, netloc, scheme):
 
 def finalise_email(email):
     """Method that finalises email and also applies common fixes."""
+    # Convert email address to lowercase.
     email = email.lower()
+
+    # Remove any leading or trailing dot.
     email = email.strip('.')
+
+    # Remove pre-filled fields from email string.
+    if email.find('?') > -1:
+        position = email.find('?')
+        email = email[:position]
+
+    # Fix for common tricks that people are using.
     email = email.replace(' dot ', '.')
     email = email.replace(' at ', '@')
 
