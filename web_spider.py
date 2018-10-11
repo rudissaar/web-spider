@@ -121,7 +121,7 @@ class WebSpider:
                         if target.fetch_emails:
                             self.fetch_emails(target, self.loot[target.netloc])
 
-                        if target.fetch_emails:
+                        if target.fetch_comments:
                             self.fetch_comments(target, self.loot[target.netloc])
 
                 self.save_loot()

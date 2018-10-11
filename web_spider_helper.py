@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""File that contains Helper functions for Web Spider"""
+"""File that contains Helper functions for Web Spider."""
 
 
 def combine_uri(part_one, part_two):

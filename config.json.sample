@@ -2,7 +2,7 @@
     "targets": [
         {
             "url": "https://www.imdb.com",
-            'recursive': true,
+            "recursive": true,
             "fetch_urls": true,
             "fetch_emails": true,
             "fetch_comments": true
@@ -10,7 +10,7 @@
         {
             "skip": true,
             "url": "https://google.com",
-            'recursive': false,
+            "recursive": false,
             "fetch_urls": false,
             "fetch_emails": true
         }
