@@ -50,7 +50,9 @@ class WebSpiderTarget:
 
     @property
     def limit(self):
-        return self.config['limit']
+        if self.config['limit']:
+            return self.config['limit']
+        return 1000
 
     @limit.setter
     def limit(self, value):

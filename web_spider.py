@@ -8,8 +8,11 @@ import json
 import os
 import time
 import re
+import sys
+
 from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
+
 import web_spider_helper as helper
 from web_spider_target import WebSpiderTarget
 
@@ -90,6 +93,8 @@ class WebSpider:
 
             if target.skip:
                 continue
+
+            sys.setrecursionlimit(target.limit)
 
             print('> Spidering domain: ' + target.netloc)
 
