@@ -4,6 +4,7 @@
 """File that contains WebSpiderTarget class."""
 
 import urllib3
+
 from urllib.parse import urlparse, urlsplit
 
 class WebSpiderTarget:
@@ -130,6 +131,9 @@ class WebSpiderTarget:
                 request = http.request('GET', url)
             except UnicodeEncodeError:
                 print('> Failed to encode URL: ' + url)
+                return b''
+            except urllib3.exceptions.MaxRetryError:
+                print('> Max retries exceeded for URL: ' + url)
                 return b''
 
             self.page_source_origin = url
